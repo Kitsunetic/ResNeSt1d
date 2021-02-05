@@ -87,17 +87,20 @@ class SplAtConv1d(nn.Module):
             gap = sum(splited)
         else:
             gap = x
-        gap = F.adaptive_avg_pool2d(gap, 1)
+        gap = F.adaptive_avg_pool1d(gap, 1)
         gap = self.fc1(gap)
         gap = self.bn1(gap)
         gap = self.relu(gap)
 
         atten = self.fc2(gap)
-        atten = self.rsoftmax(atten).view(batch, -1, 1, 1)
+        atten = self.rsoftmax(atten).view(batch, -1, 1)
 
         if self.radix > 1:
             attens = torch.split(atten, int(rchannel // self.radix), dim=1)
-            out = sum([att * split for (att, split) in zip(attens, splited)])
+            outs = []
+            for att, split in zip(attens, splited):
+                outs.append(att * split)
+            out = sum(outs)
         else:
             out = atten * x
 
@@ -210,6 +213,7 @@ class ResNeSt1d(nn.Module):
     # https://github.com/zhanghang1989/ResNeSt/blob/master/resnest/torch/resnet.py
     def __init__(
         self,
+        inchannels,
         block,
         layers,
         radix=1,
@@ -244,7 +248,7 @@ class ResNeSt1d(nn.Module):
 
         if deep_stem:
             self.conv1 = nn.Sequential(
-                nn.Conv1d(3, stem_width, 3, 2, 1, bias=False),
+                nn.Conv1d(inchannels, stem_width, 3, 2, 1, bias=False),
                 norm_layer(stem_width),
                 act(inplace=True),
                 nn.Conv1d(stem_width, stem_width, 3, 1, 1, bias=False),
@@ -253,7 +257,7 @@ class ResNeSt1d(nn.Module):
                 nn.Conv1d(stem_width, self.inplanes, 3, 1, 1, bias=False),
             )
         else:
-            self.conv1 = nn.Conv1d(3, self.inplanes, 7, 2, 3, bias=False)
+            self.conv1 = nn.Conv1d(inchannels, self.inplanes, 7, 2, 3, bias=False)
 
         self.bn1 = norm_layer(self.inplanes)
         self.relu = act(inplace=True)
@@ -369,8 +373,9 @@ class ResNeSt1d(nn.Module):
         return x
 
 
-def resnest50(pretrained=False, root="~/.encoding/models", **kwargs):
+def resnest50(inchannels, **kwargs):
     model = ResNeSt1d(
+        inchannels,
         ResNeStBottleneck,
         [3, 4, 6, 3],
         radix=2,
@@ -386,8 +391,9 @@ def resnest50(pretrained=False, root="~/.encoding/models", **kwargs):
     return model
 
 
-def resnest101(**kwargs):
+def resnest101(inchannels, **kwargs):
     model = ResNeSt1d(
+        inchannels,
         ResNeStBottleneck,
         [3, 4, 23, 3],
         radix=2,
@@ -403,8 +409,9 @@ def resnest101(**kwargs):
     return model
 
 
-def resnest200(**kwargs):
+def resnest200(inchannels, **kwargs):
     model = ResNeSt1d(
+        inchannels,
         ResNeStBottleneck,
         [3, 24, 36, 3],
         radix=2,
@@ -420,8 +427,9 @@ def resnest200(**kwargs):
     return model
 
 
-def resnest269(**kwargs):
+def resnest269(inchannels, **kwargs):
     model = ResNeSt1d(
+        inchannels,
         ResNeStBottleneck,
         [3, 30, 48, 8],
         radix=2,
