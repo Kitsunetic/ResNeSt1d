@@ -8,7 +8,9 @@ import torch.nn.functional as F
 
 This source code is that simply replaced all 2d operations of https://github.com/zhanghang1989/ResNeSt.git into 1d.
 
-- No RFConv(RectiFied Conv) - it only supports 1d cnn
+- No RFConv(RectiFied Conv) - it only supports CNN2d
+- No Dropblock
+- No pretrained
 - This code is not tested
 ====================================================================
 """
@@ -365,3 +367,71 @@ class ResNeSt1d(nn.Module):
         x = self.fc(x)
 
         return x
+
+
+def resnest50(pretrained=False, root="~/.encoding/models", **kwargs):
+    model = ResNeSt1d(
+        ResNeStBottleneck,
+        [3, 4, 6, 3],
+        radix=2,
+        groups=1,
+        bottleneck_width=64,
+        deep_stem=True,
+        stem_width=32,
+        avg_down=True,
+        avd=True,
+        avd_first=False,
+        **kwargs,
+    )
+    return model
+
+
+def resnest101(**kwargs):
+    model = ResNeSt1d(
+        ResNeStBottleneck,
+        [3, 4, 23, 3],
+        radix=2,
+        groups=1,
+        bottleneck_width=64,
+        deep_stem=True,
+        stem_width=64,
+        avg_down=True,
+        avd=True,
+        avd_first=False,
+        **kwargs,
+    )
+    return model
+
+
+def resnest200(**kwargs):
+    model = ResNeSt1d(
+        ResNeStBottleneck,
+        [3, 24, 36, 3],
+        radix=2,
+        groups=1,
+        bottleneck_width=64,
+        deep_stem=True,
+        stem_width=64,
+        avg_down=True,
+        avd=True,
+        avd_first=False,
+        **kwargs,
+    )
+    return model
+
+
+def resnest269(**kwargs):
+    model = ResNeSt1d(
+        ResNeStBottleneck,
+        [3, 30, 48, 8],
+        radix=2,
+        groups=1,
+        bottleneck_width=64,
+        deep_stem=True,
+        stem_width=64,
+        avg_down=True,
+        avd=True,
+        avd_first=False,
+        **kwargs,
+    )
+    return model
